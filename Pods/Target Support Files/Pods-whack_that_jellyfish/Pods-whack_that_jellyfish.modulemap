@@ -1,0 +1,6 @@
+framework module Pods_whack_that_jellyfish {
+  umbrella header "Pods-whack_that_jellyfish-umbrella.h"
+
+  export *
+  module * { export * }
+}
