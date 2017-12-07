@@ -8,9 +8,15 @@
 
 import UIKit
 import ARKit
+import Each
 
 class ViewController: UIViewController {
+    
+    var timer = Each(1).seconds
+    var countdown = 10
 
+    
+    @IBOutlet weak var timerLabel: UILabel!
     @IBOutlet weak var play: UIButton!
     @IBOutlet weak var SceneView: ARSCNView!
     let configuration = ARWorldTrackingConfiguration()
@@ -33,12 +39,20 @@ class ViewController: UIViewController {
     }
 
     @IBAction func play(_ sender: Any) {
+        self.setTimer()
         self.addNode()
         self.play.isEnabled = false
     }
     
     @IBAction func reset(_ sender: Any) {
+        self.timer.stop()
+        self.restoreTimer()
+        self.play.isEnabled = true
         
+        SceneView.scene.rootNode.enumerateChildNodes { (node, _) in
+            node.removeFromParentNode()
+            
+        }
     }
     
     func addNode() {
@@ -55,11 +69,21 @@ class ViewController: UIViewController {
         if hitTest.isEmpty {
             print("Didn't touch anything")
         } else {
+            if countdown > 0 {
+                
             let results = hitTest.first!
             let node = results.node
             if node.animationKeys.isEmpty {
+                SCNTransaction.begin()
                 self.animateNode(node: node)
-                node.removeFromParentNode()
+                SCNTransaction.completionBlock = {
+                   node.removeFromParentNode()
+                    self.addNode()
+                    self.restoreTimer()
+                }
+                SCNTransaction.commit()
+                
+                }
             }
         }
     }
@@ -74,11 +98,29 @@ class ViewController: UIViewController {
         node.addAnimation(spin, forKey: "position")
     }
     
+    func randomNumbers(firstNum: CGFloat, secondNum: CGFloat) -> CGFloat {
+        return CGFloat(arc4random()) / CGFloat(UINT32_MAX) * abs(firstNum - secondNum) + min(firstNum, secondNum)
+    }
+    
+    func setTimer() {
+        self.timer.perform { () -> NextStep in
+            self.countdown -= 1
+            self.timerLabel.text = String(self.countdown)
+            if self.countdown == 0 {
+                self.timerLabel.text = "You Lose"
+                return .stop
+            }
+            return .continue
+        }
+    }
+    
+    func restoreTimer() {
+        self.countdown = 10
+        self.timerLabel.text = String(self.countdown)
+    }
 }
 
-func randomNumbers(firstNum: CGFloat, secondNum: CGFloat) -> CGFloat {
-    return CGFloat(arc4random()) / CGFloat(UINT32_MAX) * abs(firstNum - secondNum) + min(firstNum, secondNum)
-}
+
 
 
 
